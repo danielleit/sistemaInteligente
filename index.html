@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador de Sinopse de Filme</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('1jofyu3ugsiz.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: #333;
+        }
+        #container {
+            max-width: 600px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin: auto;
+        }
+        h1 {
+            color: #FFFF00;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin-top: 10px;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            resize: none;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            background-color: #FFFF00;
+            color: black;
+            font-size: 18px;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #FFD700;
+        }
+        #resultado-genero {
+            margin-top: 10px; 
+            color: black; 
+            border-radius: 8px; 
+            background-color: white;
+            text-align: center;
+        }
+        #resultado-precisao {
+            margin-left: 10px; 
+            color: black; 
+            border-radius: 8px; 
+            background-color: white;
+            text-align: center;
+        }
+        #footer {
+            background-color: #000000;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .footer-info {
+            flex-grow: 1;
+            text-align: left;
+        }
+        .button-container {
+            display: flex;
+            align-items: center;
+        }
+        .button-container button {
+            margin: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            color: black;
+            border: 1px solid rgb(128, 128, 128);
+        }
+
+        th:first-child, td:first-child {
+            border-left: none;
+        }
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Analisador de Sinopse de Filme</h1>
+        <label for="sinopse">Digite a sinopse do filme:</label>
+        <textarea id="sinopse" placeholder="Escreva a sinopse do filme aqui..." maxlength="500"></textarea>
+        <button onclick="analisarSinopse()">Analisar</button>
+        
+        <div id="resultado-genero"></div>
+    </div>
+
+    <div id="footer">
+        <div class="footer-info">
+            <p>Disciplina: Introdução aos Sistemas Inteligentes</p>
+            <p>Docente: Thiago Meirelles Ventura</p>
+            <p>Aluno: Daniel Leite de Barros Teixeira</p>
+        </div>
+        <div class="button-container">
+            <button onclick="testarPrecisao()">Testar Precisão do Sistema</button>
+            <div id="resultado-precisao" style="margin-left: 10px;"></div> <!-- Resultado de precisão -->
+        </div>
+    </div>
+
+    <script>
+        async function analisarSinopse() {
+            const sinopse = document.getElementById('sinopse').value;
+            const responseElement = document.getElementById('resultado-genero');
+            responseElement.innerHTML = "Analisando...";
+
+            if (!sinopse) {
+                responseElement.innerHTML = "Por favor, insira uma sinopse válida.";
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/analisar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sinopse })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    responseElement.innerHTML = `Erro: ${errorData.error}`;
+                    return;
+                }
+
+                const data = await response.json();
+                responseElement.innerHTML = `
+                    <table>
+                        <tr>
+                            <th>Gênero</th>
+                            <td>${data.genero}</td>
+                        </tr>
+                    </table>
+                `;
+            } catch (error) {
+                responseElement.innerHTML = `Erro: ${error.message}`;
+            }
+        }
+
+        async function testarPrecisao() {
+            const responseElement = document.getElementById('resultado-precisao');
+            responseElement.innerHTML = "Calculando precisão...";
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/testar_precisao', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    responseElement.innerHTML = `Erro: ${errorData.error}`;
+                    return;
+                }
+
+                const data = await response.json();
+                responseElement.innerHTML = `
+                    <table>
+                        <tr>
+                            <th>Precisão</th>
+                            <td>${data.precisao.toFixed(1)}%</td>
+                        </tr>
+                        <tr>
+                            <th>Testes</th>
+                            <td>${data.total_testado}</td>
+                        </tr>
+                    </table>
+                `;
+            } catch (error) {
+                responseElement.innerHTML = `Erro: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
